@@ -70,9 +70,9 @@ fn kmerize(record: fastq::Record, all_kmers: &mut HashMap<String, u32>, k: usize
     }
     let seq = std::str::from_utf8(&record.seq()).unwrap().to_string();
     for i in 0..(n - k + 1) {
-        let kmer = String::from(&seq[i..(i + k)]);
+        let kmer = &seq[i..(i + k)];
         if kmer.starts_with(prefix) {
-            *all_kmers.entry(kmer).or_insert(0) += 1;
+            *all_kmers.entry(String::from(kmer)).or_insert(0) += 1;
         }
     }
 }

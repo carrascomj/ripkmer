@@ -125,10 +125,7 @@ fn intersect_keys<K: Eq + std::hash::Hash, V1, V2>(
 ) -> usize {
     left.keys()
         .filter(|k| right.contains_key(k))
-        .map(|_| 1)
-        .sum()
-    // .collect::<Vec<&K>>()
-    // .len()
+        .count()
 }
 
 fn intersect_counters<K: Eq + std::hash::Hash>(

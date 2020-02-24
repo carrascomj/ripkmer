@@ -1,11 +1,13 @@
 use bio::io::fastq;
 use bio_types::sequence::SequenceRead; // trait for len() of record
+use std::cmp;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
 
 pub struct Config {
     pub filename: String,
+    pub filedb: String,
     pub k: usize,
     pub prefix: String,
 }
@@ -15,6 +17,10 @@ impl Config {
         args.next();
 
         let filename = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a filename!"),
+        };
+        let filedb = match args.next() {
             Some(arg) => arg,
             None => return Err("Didn't get a filename!"),
         };
@@ -31,9 +37,42 @@ impl Config {
 
         Ok(Config {
             filename,
+            filedb,
             k,
             prefix,
         })
+    }
+}
+
+/// Get the number of kmers (unique and total)
+/// Useful for displaying and debugging.
+struct Kstats {
+    kunique: usize,
+    kredundant: u32,
+}
+
+impl Kstats {
+    fn new(kmers: &HashMap<String, u32>) -> Kstats {
+        let mut kunique = 0;
+        let mut kredundant = 0;
+        for (_, count) in kmers {
+            kunique += 1;
+            kredundant += count;
+        }
+        Kstats {
+            kunique,
+            kredundant,
+        }
+    }
+}
+
+impl std::fmt::Display for Kstats {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "unique k-mers: {}, redundant k-mers: {}\n",
+            self.kunique, self.kredundant
+        )
     }
 }
 
@@ -45,13 +84,61 @@ impl Config {
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let records = fastq::Reader::from_file(Path::new(&config.filename))?;
     let mut records = records.records();
-    let all_kmers: HashMap<String, u32> = hash_kmer(&mut records, config.k, &config.prefix);
-    // TODO: provisional
-    println!("{:#?}", all_kmers);
+    let kmers_target: HashMap<String, u32> = hash_kmer(&mut records, config.k, &config.prefix);
 
-    eprintln!("Running with {}-mers!", config.k);
+    let records = fastq::Reader::from_file(Path::new(&config.filedb))?;
+    let mut records = records.records();
+    let kmers_ref: HashMap<String, u32> = hash_kmer(&mut records, config.k, &config.prefix);
+    let kstat_target = Kstats::new(&kmers_target);
+    let kstat_ref = Kstats::new(&kmers_ref);
+    let match_unique = intersect_keys(&kmers_target, &kmers_ref);
+    let match_redundant = intersect_counters(&kmers_target, &kmers_ref);
+
+    // TODO: this should be moved to Kstats somehow
+    println!(
+        "({}-mers)\tUnique\tRedundant\tIntersection_unique\tIntersection",
+        config.k
+    );
+    println!(
+        "{}\t{}\t{}\t{:.2}%\t{:.2}%",
+        config.filename,
+        kstat_target.kunique,
+        kstat_target.kredundant,
+        100f64 * match_unique as f64 / kstat_target.kunique as f64,
+        100f64 * match_redundant as f64 / kstat_target.kredundant as f64 
+    );
+    println!(
+        "{}\t{}\t{}\t{:.2}%\t{:.2}%",
+        config.filename,
+        kstat_ref.kunique,
+        kstat_ref.kredundant,
+        100f64 * match_unique as f64 / kstat_ref.kunique as f64,
+        100f64 * match_redundant as f64/ kstat_ref.kredundant as f64
+    );
 
     Ok(())
+}
+
+fn intersect_keys<K: Eq + std::hash::Hash, V1, V2>(
+    left: &HashMap<K, V1>,
+    right: &HashMap<K, V2>,
+) -> usize {
+    left.keys()
+        .filter(|k| right.contains_key(k))
+        .map(|_| 1)
+        .sum()
+    // .collect::<Vec<&K>>()
+    // .len()
+}
+
+fn intersect_counters<K: Eq + std::hash::Hash>(
+    left: &HashMap<K, u32>,
+    right: &HashMap<K, u32>,
+) -> u32 {
+    left.keys()
+        .filter(|k| right.contains_key(k))
+        .map(|k| cmp::min(left.get(k), right.get(k)).unwrap())
+        .sum()
 }
 
 /// Apply kmerization over a whole file
@@ -147,5 +234,32 @@ mod tests {
             kmerize(&record, &mut all_kmers, 12, &String::from(""))
         }
         assert_eq!(HashMap::<String, u32>::new(), all_kmers);
+    }
+    #[test]
+    fn kmer_stats() {
+        let fq: &'static [u8] = b"@id description\nAATTAAGGAACC\n+\n!!!!!!!!!!!!\n";
+        let mut all_kmers: HashMap<String, u32> = HashMap::new();
+        let records = fastq::Reader::new(fq)
+            .records()
+            .map(|record| record.unwrap());
+        for record in records {
+            kmerize(&record, &mut all_kmers, 2, &String::from(""))
+        }
+        let calculated_kstats = Kstats::new(&all_kmers);
+        
+        assert_eq!((9, 11), (calculated_kstats.kunique, calculated_kstats.kredundant));
+    }
+    #[test]
+    fn counter_comp() {
+        let mut counter1: HashMap<String, u32> = HashMap::new();
+        counter1.insert(String::from("a"), 23);
+        counter1.insert(String::from("b"), 2);
+        counter1.insert(String::from("c"), 15);
+        let mut counter2: HashMap<String, u32> = HashMap::new();
+        counter2.insert(String::from("a"), 5);
+        counter2.insert(String::from("b"), 7);
+        counter2.insert(String::from("c"), 3);
+        assert_eq!(3, intersect_keys(&counter1, &counter2));
+        assert_eq!(10, intersect_counters(&counter1, &counter2));
     }
 }

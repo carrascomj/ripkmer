@@ -11,7 +11,7 @@ The first idea is to reproduce in Rust the [KmerFinder](https://bitbucket.org/ge
 * [x] K-mer count on FASTQ.
 * [x] Filter by prefix.
 * [ ] Make it work for FASTA and BED files.
-* [ ] Compare k-mer distribution of two inputs.
+* [x] Compare k-mer distribution of two inputs.
 * [ ] Move towards a KMA implementation.
 
 ## References

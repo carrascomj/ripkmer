@@ -83,14 +83,15 @@ fn kmerize(
         // TODO: verify that this is the expected behaviour
         return;
     }
-    // let seq = std::str::from_utf8(record.seq()).unwrap().to_string();
+
     let seq = record.seq();
     let prefix = prefix.as_bytes();
     for i in 0..(n - k + 1) {
         let kmer = &seq[i..(i + k)];
         if kmer.starts_with(prefix) {
-            // *all_kmers.entry(String::from(kmer)).or_insert(0) += 1;
-            *all_kmers.entry(std::str::from_utf8(kmer).unwrap().to_string()).or_insert(0) += 1;
+            *all_kmers
+                .entry(std::str::from_utf8(kmer).unwrap().to_string())
+                .or_insert(0) += 1;
         }
     }
 }

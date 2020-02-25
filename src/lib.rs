@@ -32,7 +32,7 @@ impl Config {
 
         let prefix = match args.next() {
             Some(arg) => arg,
-            None => String::from("ATCG"), // default
+            None => String::from("ATGAC"), // default
         };
 
         Ok(Config {

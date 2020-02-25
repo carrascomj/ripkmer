@@ -4,6 +4,7 @@ use std::cmp;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
+use std::time::SystemTime;
 
 pub struct Config {
     pub filename: String,
@@ -82,10 +83,17 @@ impl std::fmt::Display for Kstats {
 /// # Errors
 /// This function will return an error if it is incapable of reading the `filename`
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    let now = SystemTime::now();
     let records = fastq::Reader::from_file(Path::new(&config.filename))?;
+    if let Ok(elapsed) = now.elapsed() {
+        eprintln!("IO: {}", elapsed.as_millis());
+    }
     let mut records = records.records();
+    let now = SystemTime::now();
     let kmers_target: HashMap<String, u32> = hash_kmer(&mut records, config.k, &config.prefix);
-
+    if let Ok(elapsed) = now.elapsed() {
+        eprintln!("Hashing: {}", elapsed.as_millis());
+    }
     let records = fastq::Reader::from_file(Path::new(&config.filedb))?;
     let mut records = records.records();
 
@@ -148,23 +156,15 @@ fn hash_kmer(
     prefix: &String,
 ) -> HashMap<String, u32> {
     let mut all_kmers: HashMap<String, u32> = HashMap::new();
-    for record in records {
-        let record = record.as_ref().unwrap();
-        if record.check().is_ok() {
-            kmerize(record, &mut all_kmers, k, prefix);
-        }
-    }
+    let prefix = prefix.as_bytes();
+    records.for_each(|r| kmerize(r.as_ref().unwrap(), &mut all_kmers, k, prefix));
+
     all_kmers
 }
 
 /// Gather overlapping k-mers with a prefix
 /// Usually just the k-mers starting with a prefix are used to reduce the size of the database.
-fn kmerize(
-    record: &fastq::Record,
-    all_kmers: &mut HashMap<String, u32>,
-    k: usize,
-    prefix: &String,
-) {
+fn kmerize(record: &fastq::Record, all_kmers: &mut HashMap<String, u32>, k: usize, prefix: &[u8]) {
     let n = record.len();
     if n < k {
         // TODO: verify that this is the expected behaviour
@@ -172,7 +172,6 @@ fn kmerize(
     }
 
     let seq = record.seq();
-    let prefix = prefix.as_bytes();
     for i in 0..(n - k + 1) {
         let kmer = &seq[i..(i + k)];
         if kmer.starts_with(prefix) {
@@ -201,7 +200,7 @@ mod tests {
         expected.insert(String::from("AACC"), 1);
 
         for record in records {
-            kmerize(&record, &mut all_kmers, 4, &String::from("AA"))
+            kmerize(&record, &mut all_kmers, 4, "AA".as_bytes())
         }
         assert_eq!(expected, all_kmers);
     }
@@ -218,7 +217,7 @@ mod tests {
 
         let mut all_kmers: HashMap<String, u32> = HashMap::new();
         for record in records {
-            kmerize(&record, &mut all_kmers, 4, &String::from(""))
+            kmerize(&record, &mut all_kmers, 4, "".as_bytes())
         }
 
         assert_eq!(expected, all_kmers);
@@ -231,7 +230,7 @@ mod tests {
             .map(|record| record.unwrap());
         let mut all_kmers: HashMap<String, u32> = HashMap::new();
         for record in records {
-            kmerize(&record, &mut all_kmers, 12, &String::from(""))
+            kmerize(&record, &mut all_kmers, 12, "".as_bytes())
         }
         assert_eq!(HashMap::<String, u32>::new(), all_kmers);
     }
@@ -243,7 +242,7 @@ mod tests {
             .records()
             .map(|record| record.unwrap());
         for record in records {
-            kmerize(&record, &mut all_kmers, 2, &String::from(""))
+            kmerize(&record, &mut all_kmers, 2, "".as_bytes())
         }
         let calculated_kstats = Kstats::new(&all_kmers);
         

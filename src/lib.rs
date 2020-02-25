@@ -4,7 +4,6 @@ use std::cmp;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
-use std::time::SystemTime;
 
 pub struct Config {
     pub filename: String,

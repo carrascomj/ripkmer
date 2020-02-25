@@ -83,17 +83,9 @@ impl std::fmt::Display for Kstats {
 /// # Errors
 /// This function will return an error if it is incapable of reading the `filename`
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let now = SystemTime::now();
     let records = fastq::Reader::from_file(Path::new(&config.filename))?;
-    if let Ok(elapsed) = now.elapsed() {
-        eprintln!("IO: {}", elapsed.as_millis());
-    }
     let mut records = records.records();
-    let now = SystemTime::now();
     let kmers_target: HashMap<String, u32> = hash_kmer(&mut records, config.k, &config.prefix);
-    if let Ok(elapsed) = now.elapsed() {
-        eprintln!("Hashing: {}", elapsed.as_millis());
-    }
     let records = fastq::Reader::from_file(Path::new(&config.filedb))?;
     let mut records = records.records();
 

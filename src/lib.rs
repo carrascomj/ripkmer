@@ -88,6 +88,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     let records = fastq::Reader::from_file(Path::new(&config.filedb))?;
     let mut records = records.records();
+
     let kmers_ref: HashMap<String, u32> = hash_kmer(&mut records, config.k, &config.prefix);
     let kstat_target = Kstats::new(&kmers_target);
     let kstat_ref = Kstats::new(&kmers_ref);
@@ -109,7 +110,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     );
     println!(
         "{}\t{}\t{}\t{:.2}%\t{:.2}%",
-        config.filename,
+        config.filedb,
         kstat_ref.kunique,
         kstat_ref.kredundant,
         100f64 * match_unique as f64 / kstat_ref.kunique as f64,
@@ -119,6 +120,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Count intersection of keys in two HashMaps
 fn intersect_keys<K: Eq + std::hash::Hash, V1, V2>(
     left: &HashMap<K, V1>,
     right: &HashMap<K, V2>,
@@ -128,6 +130,7 @@ fn intersect_keys<K: Eq + std::hash::Hash, V1, V2>(
         .count()
 }
 
+/// Count intersection of appeareances in two Counters (HashMaps)
 fn intersect_counters<K: Eq + std::hash::Hash>(
     left: &HashMap<K, u32>,
     right: &HashMap<K, u32>,

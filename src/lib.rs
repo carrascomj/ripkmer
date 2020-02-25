@@ -4,6 +4,8 @@ use std::cmp;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
+use std::thread;
+use std::sync::mpsc;
 
 pub struct Config {
     pub filename: String,
@@ -84,11 +86,20 @@ impl std::fmt::Display for Kstats {
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let records = fastq::Reader::from_file(Path::new(&config.filename))?;
     let mut records = records.records();
-    let kmers_target: HashMap<String, u32> = hash_kmer(&mut records, config.k, &config.prefix);
+
+    let (tx, rx) = mpsc::channel();
+    let k = config.k;
+    let prefix = config.prefix.clone();
+    thread::spawn(move || {
+        let kmers_target: HashMap<String, u32> = hash_kmer(&mut records, k, &prefix);
+        tx.send(kmers_target).unwrap();
+    });
+
     let records = fastq::Reader::from_file(Path::new(&config.filedb))?;
     let mut records = records.records();
-
     let kmers_ref: HashMap<String, u32> = hash_kmer(&mut records, config.k, &config.prefix);
+
+    let kmers_target = rx.recv().unwrap();
     let kstat_target = Kstats::new(&kmers_target);
     let kstat_ref = Kstats::new(&kmers_ref);
     let match_unique = intersect_keys(&kmers_target, &kmers_ref);

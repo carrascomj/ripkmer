@@ -114,7 +114,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         kstat_target.kunique,
         kstat_target.kredundant,
         100f64 * match_unique as f64 / kstat_target.kunique as f64,
-        100f64 * match_redundant as f64 / kstat_target.kredundant as f64 
+        100f64 * match_redundant as f64 / kstat_target.kredundant as f64
     );
     println!(
         "{}\t{}\t{}\t{:.2}%\t{:.2}%",
@@ -122,7 +122,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         kstat_ref.kunique,
         kstat_ref.kredundant,
         100f64 * match_unique as f64 / kstat_ref.kunique as f64,
-        100f64 * match_redundant as f64/ kstat_ref.kredundant as f64
+        100f64 * match_redundant as f64 / kstat_ref.kredundant as f64
     );
 
     Ok(())
@@ -133,9 +133,7 @@ fn intersect_keys<K: Eq + std::hash::Hash, V1, V2>(
     left: &HashMap<K, V1>,
     right: &HashMap<K, V2>,
 ) -> usize {
-    left.keys()
-        .filter(|k| right.contains_key(k))
-        .count()
+    left.keys().filter(|k| right.contains_key(k)).count()
 }
 
 /// Count intersection of appeareances in two Counters (HashMaps)
@@ -245,8 +243,11 @@ mod tests {
             kmerize(&record, &mut all_kmers, 2, "".as_bytes())
         }
         let calculated_kstats = Kstats::new(&all_kmers);
-        
-        assert_eq!((9, 11), (calculated_kstats.kunique, calculated_kstats.kredundant));
+
+        assert_eq!(
+            (9, 11),
+            (calculated_kstats.kunique, calculated_kstats.kredundant)
+        );
     }
     #[test]
     fn counter_comp() {

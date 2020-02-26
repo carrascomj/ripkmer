@@ -1,5 +1,5 @@
 # ripkmer
-[![Build Status](https://travis-ci.com/carrascomj/ripkmer.svg?branch=master)](https://travis-ci.com/carrascomj/ripkmer)
+[![Build Status](https://travis-ci.com/carrascomj/ripkmer.svg?branch=master)](https://travis-ci.com/carrascomj/ripkmer)  
 There are two ways of viewing this:
 
 - Some k-mer algorithms using [Rust-Bio](https://github.com/rust-bio/rust-bio/)[[1]](#amin2019).

@@ -4,8 +4,8 @@ use std::cmp;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
-use std::thread;
 use std::sync::mpsc;
+use std::thread;
 
 pub struct Config {
     pub filename: String,

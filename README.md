@@ -2,11 +2,11 @@
 [![Build Status](https://travis-ci.com/carrascomj/ripkmer.svg?branch=master)](https://travis-ci.com/carrascomj/ripkmer)  
 There are two ways of viewing this:
 
-- Some k-mer algorithms using [Rust-Bio](https://github.com/rust-bio/rust-bio/)[[1]](#amin2019).
+- Some k-mer algorithms using [Rust-Bio](https://github.com/rust-bio/rust-bio/) [[1]](#koster2016).
 - My first project in Rust just to get confident with it.
 
 ## Features
-The first idea is to reproduce in Rust the [KmerFinder](https://bitbucket.org/genomicepidemiology/kmerfinder/src/master/) [[2]](#amin2019)
+The first idea is to reproduce in Rust the [KmerFinder](https://bitbucket.org/genomicepidemiology/kmerfinder/src/master/) [[2]](#kmerfinder2014)
 (in Python, but also in [JavaScript](https://github.com/yosoyubik/kmerfinderjs-docker)).
 
 * [x] K-mer count on FASTQ.

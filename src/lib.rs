@@ -57,7 +57,7 @@ impl Kstats {
     fn new(kmers: &HashMap<String, u32>) -> Kstats {
         let mut kunique = 0;
         let mut kredundant = 0;
-        for (_, count) in kmers {
+        for count in kmers.values() {
             kunique += 1;
             kredundant += count;
         }
@@ -70,7 +70,7 @@ impl Kstats {
 
 impl std::fmt::Display for Kstats {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
+        writeln!(
             f,
             "unique k-mers: {}, redundant k-mers: {}\n",
             self.kunique, self.kredundant
@@ -153,7 +153,7 @@ fn intersect_counters<K: Eq + std::hash::Hash>(
 fn hash_kmer(
     records: &mut fastq::Records<std::fs::File>,
     k: usize,
-    prefix: &String,
+    prefix: &str,
 ) -> HashMap<String, u32> {
     let mut all_kmers: HashMap<String, u32> = HashMap::new();
     let prefix = prefix.as_bytes();
